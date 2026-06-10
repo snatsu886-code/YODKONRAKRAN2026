@@ -196,10 +196,9 @@ function loadOrders() {
 function saveOrders() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
-  } catch(e) {
+   } catch(e) {
     showToast('⚠️ พื้นที่เต็ม! ลองลบรูปบางรายการ', 'err');
   }
-}
 }
 function showToast(msg, type = 'ok') {
   const t = document.getElementById('toast');

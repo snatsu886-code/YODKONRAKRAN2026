@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>บันทึกหนี้ค้างจ่าย – ร้านยอดกลการ</title>
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --card: #ffffff;
+    --border: #ddd9d0;
+    --accent: #c0392b;
+    --accent2: #922b21;
+    --text: #1a1a1a;
+    --muted: #7a7265;
+    --green: #1a7a4a;
+    --yellow: #d4800a;
+    --row-alt: #faf9f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sarabun', 'Noto Sans Thai', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--accent);
+    color: #fff;
+    padding: 16px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  }
+  .header-title { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+  .header-sub { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: var(--accent2);
+    border-bottom: 2px solid var(--accent);
+  }
+  .tab {
+    flex: 1;
+    padding: 11px 6px;
+    text-align: center;
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.15s, color 0.15s;
+    border: none;
+    background: transparent;
+  }
+  .tab.active {
+    background: var(--bg);
+    color: var(--accent);
+    border-radius: 6px 6px 0 0;
+  }
+
+  /* PAGES */
+  .page { display: none; padding: 16px; min-height: calc(100vh - 110px); }
+  .page.active { display: block; }
+
+  /* SUMMARY CARDS */
+  .summary-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .sum-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .sum-card .label { font-size: 12px; color: var(--muted); }
+  .sum-card .value { font-size: 22px; font-weight: 700; margin-top: 2px; }
+  .sum-card.danger .value { color: var(--accent); }
+  .sum-card.safe .value { color: var(--green); }
+  .sum-card.warn .value { color: var(--yellow); }
+
+  /* FORM */
+  .form-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .form-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--accent);
+    background: #fff;
+  }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn:hover { background: var(--accent2); }
+  .btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+    margin-top: 8px;
+  }
+  .btn-outline:hover { background: #fdecea; }
+  .btn-sm {
+    display: inline-block;
+    width: auto;
+    padding: 5px 12px;
+    font-size: 12px;
+    border-radius: 6px;
+    margin-left: 4px;
+  }
+  .btn-green { background: var(--green); }
+  .btn-green:hover { background: #145c38; }
+
+  /* DEBT LIST */
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .debt-list { display: flex; flex-direction: column; gap: 10px; }
+  .debt-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 14px;
+    position: relative;
+  }
+  .debt-item.paid { border-color: #b7e4cb; background: #f2fbf6; }
+  .debt-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 4px;
+  }
+  .debt-creditor { font-size: 15px; font-weight: 700; }
+  .debt-amount {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+    margin-left: 8px;
+  }
+  .debt-item.paid .debt-amount { color: var(--green); }
+  .debt-meta { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .debt-note { font-size: 13px; color: #555; margin-bottom: 8px; }
+  .debt-actions { display: flex; justify-content: flex-end; gap: 4px; flex-wrap: wrap; }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+  .badge-pending { background: #fde8e6; color: var(--accent); }
+  .badge-paid { background: #d4edda; color: var(--green); }
+  .badge-partial { background: #fff3cd; color: var(--yellow); }
+
+  /* PRINT */
+  .print-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  /* EMPTY */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 8px; }
+
+  /* FILTER */
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--muted);
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .filter-btn.active { border-color: var(--accent); background: #fdecea; color: var(--accent); }
+
+  /* MODAL */
+  .modal-bg {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 20px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: var(--accent); }
+  .modal-close {
+    float: right;
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: var(--muted);
+    cursor: pointer;
+    line-height: 1;
+    margin-top: -4px;
+  }
+
+  @media print {
+    .tabs, .header, .page:not(#page-print), .no-print { display: none !important; }
+    #page-print { display: block !important; padding: 0; }
+    body { background: #fff; font-size: 13px; }
+    .print-area { padding: 20px; }
+    .print-logo { font-size: 20px; font-weight: 800; color: #000; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #999; padding: 6px 8px; font-size: 12px; }
+    th { background: #eee; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">📋 บันทึกหนี้ค้างจ่าย</div>
+    <div class="header-sub">ร้านยอดกลการ</div>
+  </div>
+  <div style="font-size:24px">🔧</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showPage('page-list', this)">📋 รายการ</button>
+  <button class="tab" onclick="showPage('page-add', this)">➕ เพิ่ม</button>
+  <button class="tab" onclick="showPage('page-print', this); buildPrint()">🖨️ สรุป/พิมพ์</button>
+</div>
+
+<!-- PAGE: LIST -->
+<div id="page-list" class="page active">
+  <div class="summary-row">
+    <div class="sum-card danger">
+      <div class="label">ยังค้างจ่าย</div>
+      <div class="value" id="sumPending">฿0</div>
+    </div>
+    <div class="sum-card safe">
+      <div class="label">จ่ายแล้ว (เดือนนี้)</div>
+      <div class="value" id="sumPaid">฿0</div>
+    </div>
+    <div class="sum-card warn" style="grid-column: span 2;">
+      <div class="label">รวมทั้งหมด (ทุกรายการ)</div>
+      <div class="value" id="sumAll">฿0</div>
+    </div>
+  </div>
+
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="setFilter('all', this)">ทั้งหมด</button>
+    <button class="filter-btn" onclick="setFilter('pending', this)">ค้างจ่าย</button>
+    <button class="filter-btn" onclick="setFilter('partial', this)">จ่ายบางส่วน</button>
+    <button class="filter-btn" onclick="setFilter('paid', this)">จ่ายครบแล้ว</button>
+  </div>
+
+  <div class="section-title">รายการหนี้</div>
+  <div class="debt-list" id="debtList">
+    <div class="empty"><div class="empty-icon">📭</div>ยังไม่มีรายการ<br>กด "➕ เพิ่ม" เพื่อเพิ่มรายการหนี้</div>
+  </div>
+</div>
+
+<!-- PAGE: ADD -->
+<div id="page-add" class="page">
+  <div class="form-card">
+    <div class="form-title">➕ เพิ่มรายการหนี้ใหม่</div>
+    <div class="field">
+      <label>เจ้าหนี้ / ร้านที่ค้างจ่าย *</label>
+      <input type="text" id="f-creditor" placeholder="เช่น ร้านศิริยนต์, บ.ไทยออโต้ฯ">
+    </div>
+    <div class="field">
+      <label>หมวดหมู่</label>
+      <select id="f-cat">
+        <option value="อะไหล่">อะไหล่</option>
+        <option value="น้ำมัน/สาร">น้ำมัน/สาร</option>
+        <option value="ค่าบริการ">ค่าบริการ</option>
+        <option value="อุปกรณ์">อุปกรณ์</option>
+        <option value="อื่นๆ">อื่นๆ</option>
+      </select>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>วันที่ *</label>
+        <input type="date" id="f-date">
+      </div>
+      <div class="field">
+        <label>วันกำหนดชำระ</label>
+        <input type="date" id="f-due">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>ยอดรวม (฿) *</label>
+        <input type="number" id="f-amount" placeholder="0.00" min="0" step="0.01">
+      </div>
+      <div class="field">
+        <label>จ่ายแล้ว (฿)</label>
+        <input type="number" id="f-paid" placeholder="0.00" min="0" step="0.01" value="0">
+      </div>
+    </div>
+    <div class="field">
+      <label>รายละเอียด / รายการ</label>
+      <textarea id="f-note" placeholder="เช่น ผ้าเบรค Honda Civic FC x4 ชุด, ช่วงล่าง Hilux..."></textarea>
+    </div>
+    <div class="field">
+      <label>เลขที่ใบแจ้งหนี้ / อ้างอิง</label>
+      <input type="text" id="f-ref" placeholder="เช่น INV-2026-001">
+    </div>
+    <button class="btn" onclick="addDebt()">💾 บันทึกรายการ</button>
+  </div>
+</div>
+
+<!-- PAGE: PRINT -->
+<div id="page-print" class="page">
+  <div class="print-section no-print">
+    <div style="font-size:14px; font-weight:700; margin-bottom:10px; color:var(--accent)">🖨️ สรุปใบแจ้งหนี้</div>
+    <div class="row2" style="margin-bottom:10px;">
+      <div class="field">
+        <label>ตั้งแต่วันที่</label>
+        <input type="date" id="p-from">
+      </div>
+      <div class="field">
+        <label>ถึงวันที่</label>
+        <input type="date" id="p-to">
+      </div>
+    </div>
+    <div class="field">
+      <label>แสดงสถานะ</label>
+      <select id="p-status">
+        <option value="all">ทั้งหมด</option>
+        <option value="pending">ค้างจ่าย / บางส่วน</option>
+        <option value="paid">จ่ายครบแล้ว</option>
+      </select>
+    </div>
+    <button class="btn" onclick="buildPrint()">🔄 อัพเดตตัวอย่าง</button>
+    <button class="btn btn-outline" onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button>
+  </div>
+
+  <div id="print-area" style="background:#fff; padding:16px; border-radius:12px; border:1px solid var(--border);">
+    <!-- content injected -->
+  </div>
+</div>
+
+<!-- MODAL: EDIT -->
+<div class="modal-bg" id="modal-bg" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal(null, true)">✕</button>
+    <div class="modal-title">✏️ แก้ไขรายการ</div>
+    <div class="field">
+      <label>เจ้าหนี้ *</label>
+      <input type="text" id="e-creditor">
+    </div>
+    <div class="field">
+      <label>หมวดหมู่</label>
+      <select id="e-cat">
+        <option>อะไหล่</option><option>น้ำมัน/สาร</option><option>ค่าบริการ</option><option>อุปกรณ์</option><option>อื่นๆ</option>
+      </select>
+    </div>
+    <div class="row2">
+      <div class="field"><label>วันที่</label><input type="date" id="e-date"></div>
+      <div class="field"><label>ครบกำหนด</label><input type="date" id="e-due"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>ยอดรวม (฿)</label><input type="number" id="e-amount" step="0.01"></div>
+      <div class="field"><label>จ่ายแล้ว (฿)</label><input type="number" id="e-paid" step="0.01"></div>
+    </div>
+    <div class="field"><label>รายละเอียด</label><textarea id="e-note"></textarea></div>
+    <div class="field"><label>อ้างอิง</label><input type="text" id="e-ref"></div>
+    <button class="btn" onclick="saveEdit()">💾 บันทึก</button>
+  </div>
+</div>
+
+<script>
+const KEY = 'yodkon_debts_v1';
+let debts = JSON.parse(localStorage.getItem(KEY) || '[]');
+let filterMode = 'all';
+let editIdx = -1;
+
+// Set default date
+document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(debts));
+}
+
+function fmt(n) {
+  return '฿' + Number(n || 0).toLocaleString('th-TH', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtDate(d) {
+  if (!d) return '-';
+  const parts = d.split('-');
+  if (parts.length !== 3) return d;
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return `${parseInt(parts[2])} ${months[parseInt(parts[1])-1]} ${parseInt(parts[0])+543}`;
+}
+
+function getStatus(d) {
+  const paid = parseFloat(d.paid || 0);
+  const amt = parseFloat(d.amount || 0);
+  if (paid <= 0) return 'pending';
+  if (paid >= amt) return 'paid';
+  return 'partial';
+}
+
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'page-list') renderList();
+}
+
+function setFilter(mode, btn) {
+  filterMode = mode;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function addDebt() {
+  const creditor = document.getElementById('f-creditor').value.trim();
+  const amount = parseFloat(document.getElementById('f-amount').value);
+  if (!creditor) { alert('กรุณาใส่ชื่อเจ้าหนี้'); return; }
+  if (!amount || amount <= 0) { alert('กรุณาใส่จำนวนเงิน'); return; }
+  const debt = {
+    id: Date.now(),
+    creditor,
+    cat: document.getElementById('f-cat').value,
+    date: document.getElementById('f-date').value,
+    due: document.getElementById('f-due').value,
+    amount,
+    paid: parseFloat(document.getElementById('f-paid').value) || 0,
+    note: document.getElementById('f-note').value.trim(),
+    ref: document.getElementById('f-ref').value.trim(),
+    createdAt: new Date().toISOString()
+  };
+  debts.unshift(debt);
+  save();
+  // Reset
+  document.getElementById('f-creditor').value = '';
+  document.getElementById('f-amount').value = '';
+  document.getElementById('f-paid').value = '0';
+  document.getElementById('f-note').value = '';
+  document.getElementById('f-ref').value = '';
+  document.getElementById('f-due').value = '';
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  showPage('page-list', document.querySelector('.tab'));
+  document.querySelector('.tab').classList.add('active');
+}
+
+function renderList() {
+  const list = document.getElementById('debtList');
+  let data = debts.filter(d => {
+    if (filterMode === 'all') return true;
+    if (filterMode === 'pending') return getStatus(d) === 'pending';
+    if (filterMode === 'partial') return getStatus(d) === 'partial';
+    if (filterMode === 'paid') return getStatus(d) === 'paid';
+    return true;
+  });
+
+  // Summary
+  const thisMonth = new Date().toISOString().slice(0,7);
+  let pending = 0, paidAmt = 0, total = 0;
+  debts.forEach(d => {
+    const st = getStatus(d);
+    const rem = parseFloat(d.amount) - parseFloat(d.paid||0);
+    if (st !== 'paid') pending += rem;
+    if (st === 'paid' && (d.date||'').startsWith(thisMonth)) paidAmt += parseFloat(d.amount);
+    total += parseFloat(d.amount);
+  });
+  document.getElementById('sumPending').textContent = fmt(pending);
+  document.getElementById('sumPaid').textContent = fmt(paidAmt);
+  document.getElementById('sumAll').textContent = fmt(total);
+
+  if (!data.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📭</div>${filterMode !== 'all' ? 'ไม่มีรายการในหมวดนี้' : 'ยังไม่มีรายการ<br>กด "➕ เพิ่ม" เพื่อเพิ่มรายการหนี้'}</div>`;
+    return;
+  }
+
+  list.innerHTML = data.map((d, i) => {
+    const realIdx = debts.indexOf(d);
+    const st = getStatus(d);
+    const rem = parseFloat(d.amount) - parseFloat(d.paid||0);
+    const badge = st === 'paid' ? '<span class="badge badge-paid">จ่ายครบแล้ว ✓</span>'
+                : st === 'partial' ? '<span class="badge badge-partial">จ่ายบางส่วน</span>'
+                : '<span class="badge badge-pending">ค้างจ่าย</span>';
+    const overdue = d.due && d.due < new Date().toISOString().slice(0,10) && st !== 'paid'
+      ? '<span style="color:var(--accent);font-size:11px;font-weight:700;"> ⚠️ เกินกำหนด</span>' : '';
+    return `
+      <div class="debt-item ${st === 'paid' ? 'paid' : ''}">
+        <div class="debt-top">
+          <div class="debt-creditor">${d.creditor}</div>
+          <div class="debt-amount">${fmt(d.amount)}</div>
+        </div>
+        <div class="debt-meta">
+          ${d.cat} · วันที่ ${fmtDate(d.date)}
+          ${d.due ? `· ครบ ${fmtDate(d.due)}${overdue}` : ''}
+          ${d.ref ? `· <span style="color:var(--muted)">${d.ref}</span>` : ''}
+        </div>
+        ${d.note ? `<div class="debt-note">${d.note}</div>` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div>${badge}</div>
+          ${st !== 'paid' ? `<div style="font-size:12px;color:var(--muted)">ค้าง: <b style="color:var(--accent)">${fmt(rem)}</b></div>` : ''}
+          ${st === 'partial' ? `<div style="font-size:12px;color:var(--muted)">จ่ายแล้ว: <b style="color:var(--green)">${fmt(d.paid)}</b></div>` : ''}
+        </div>
+        <div class="debt-actions">
+          ${st !== 'paid' ? `<button class="btn btn-green btn-sm" onclick="markPaid(${realIdx})">✓ จ่ายครบ</button>` : ''}
+          <button class="btn btn-sm btn-outline" onclick="openEdit(${realIdx})">✏️</button>
+          <button class="btn btn-sm" style="background:#888;" onclick="deleteDebt(${realIdx})">🗑️</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function markPaid(idx) {
+  if (confirm(`ยืนยันว่าจ่ายครบแล้ว?\n${debts[idx].creditor} – ${fmt(debts[idx].amount)}`)) {
+    debts[idx].paid = debts[idx].amount;
+    save();
+    renderList();
+  }
+}
+
+function deleteDebt(idx) {
+  if (confirm(`ลบรายการ?\n${debts[idx].creditor} – ${fmt(debts[idx].amount)}`)) {
+    debts.splice(idx, 1);
+    save();
+    renderList();
+  }
+}
+
+function openEdit(idx) {
+  editIdx = idx;
+  const d = debts[idx];
+  document.getElementById('e-creditor').value = d.creditor;
+  document.getElementById('e-cat').value = d.cat;
+  document.getElementById('e-date').value = d.date;
+  document.getElementById('e-due').value = d.due || '';
+  document.getElementById('e-amount').value = d.amount;
+  document.getElementById('e-paid').value = d.paid || 0;
+  document.getElementById('e-note').value = d.note || '';
+  document.getElementById('e-ref').value = d.ref || '';
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+function saveEdit() {
+  if (editIdx < 0) return;
+  const d = debts[editIdx];
+  d.creditor = document.getElementById('e-creditor').value.trim() || d.creditor;
+  d.cat = document.getElementById('e-cat').value;
+  d.date = document.getElementById('e-date').value;
+  d.due = document.getElementById('e-due').value;
+  d.amount = parseFloat(document.getElementById('e-amount').value) || d.amount;
+  d.paid = parseFloat(document.getElementById('e-paid').value) || 0;
+  d.note = document.getElementById('e-note').value.trim();
+  d.ref = document.getElementById('e-ref').value.trim();
+  save();
+  closeModal(null, true);
+  renderList();
+}
+
+function closeModal(e, force) {
+  if (force || e.target.id === 'modal-bg') {
+    document.getElementById('modal-bg').classList.remove('show');
+    editIdx = -1;
+  }
+}
+
+function buildPrint() {
+  const from = document.getElementById('p-from')?.value;
+  const to = document.getElementById('p-to')?.value;
+  const st = document.getElementById('p-status')?.value || 'all';
+  let data = debts.filter(d => {
+    if (from && d.date < from) return false;
+    if (to && d.date > to) return false;
+    const s = getStatus(d);
+    if (st === 'pending') return s !== 'paid';
+    if (st === 'paid') return s === 'paid';
+    return true;
+  });
+  let totalAmt = 0, totalPaid = 0;
+  data.forEach(d => { totalAmt += parseFloat(d.amount); totalPaid += parseFloat(d.paid||0); });
+  const today = new Date().toLocaleDateString('th-TH', {year:'numeric',month:'long',day:'numeric'});
+  const rows = data.map((d, i) => {
+    const rem = parseFloat(d.amount) - parseFloat(d.paid||0);
+    const st2 = getStatus(d);
+    return `<tr>
+      <td style="text-align:center">${i+1}</td>
+      <td>${d.creditor}</td>
+      <td>${d.cat}</td>
+      <td>${fmtDate(d.date)}</td>
+      <td>${fmtDate(d.due)}</td>
+      <td>${d.ref||'-'}</td>
+      <td style="text-align:right">${Number(d.amount).toLocaleString('th-TH',{minimumFractionDigits:2})}</td>
+      <td style="text-align:right">${Number(d.paid||0).toLocaleString('th-TH',{minimumFractionDigits:2})}</td>
+      <td style="text-align:right;font-weight:700;color:${rem>0?'#c0392b':'#1a7a4a'}">${Number(rem).toLocaleString('th-TH',{minimumFractionDigits:2})}</td>
+      <td style="text-align:center">${st2==='paid'?'✓ จ่ายครบ':st2==='partial'?'บางส่วน':'ค้างจ่าย'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('print-area').innerHTML = `
+    <div class="print-area">
+      <div style="text-align:center;margin-bottom:16px;">
+        <div class="print-logo" style="font-size:20px;font-weight:800">ร้านยอดกลการ</div>
+        <div style="font-size:15px;font-weight:700;margin-top:4px">สรุปรายการหนี้ค้างจ่าย</div>
+        <div style="font-size:12px;color:#666;margin-top:2px">วันที่พิมพ์: ${today}</div>
+        ${from||to ? `<div style="font-size:12px;color:#666">ช่วง: ${from?fmtDate(from):'ทั้งหมด'} – ${to?fmtDate(to):'ปัจจุบัน'}</div>` : ''}
+      </div>
+      <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#c0392b;color:#fff">
+            <th style="padding:7px 5px;border:1px solid #999">#</th>
+            <th style="padding:7px 5px;border:1px solid #999">เจ้าหนี้</th>
+            <th style="padding:7px 5px;border:1px solid #999">หมวด</th>
+            <th style="padding:7px 5px;border:1px solid #999">วันที่</th>
+            <th style="padding:7px 5px;border:1px solid #999">ครบกำหนด</th>
+            <th style="padding:7px 5px;border:1px solid #999">อ้างอิง</th>
+            <th style="padding:7px 5px;border:1px solid #999">ยอดรวม</th>
+            <th style="padding:7px 5px;border:1px solid #999">จ่ายแล้ว</th>
+            <th style="padding:7px 5px;border:1px solid #999">ค้างจ่าย</th>
+            <th style="padding:7px 5px;border:1px solid #999">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows || '<tr><td colspan="10" style="text-align:center;padding:20px;color:#999">ไม่มีรายการ</td></tr>'}
+        </tbody>
+        <tfoot>
+          <tr style="background:#f5f5f5;font-weight:800">
+            <td colspan="6" style="padding:7px 5px;border:1px solid #999;text-align:right">รวมทั้งหมด</td>
+            <td style="padding:7px 5px;border:1px solid #999;text-align:right">${totalAmt.toLocaleString('th-TH',{minimumFractionDigits:2})}</td>
+            <td style="padding:7px 5px;border:1px solid #999;text-align:right;color:#1a7a4a">${totalPaid.toLocaleString('th-TH',{minimumFractionDigits:2})}</td>
+            <td style="padding:7px 5px;border:1px solid #999;text-align:right;color:#c0392b">${(totalAmt-totalPaid).toLocaleString('th-TH',{minimumFractionDigits:2})}</td>
+            <td style="border:1px solid #999"></td>
+          </tr>
+        </tfoot>
+      </table>
+      </div>
+      <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;">
+        <div style="border:1px solid #ccc;padding:10px;border-radius:6px">
+          <div style="font-size:11px;color:#666">จำนวนรายการ</div>
+          <div style="font-size:18px;font-weight:800">${data.length} รายการ</div>
+        </div>
+        <div style="border:1px solid #c0392b;padding:10px;border-radius:6px;background:#fdecea">
+          <div style="font-size:11px;color:#666">ค้างจ่ายทั้งหมด</div>
+          <div style="font-size:18px;font-weight:800;color:#c0392b">฿${(totalAmt-totalPaid).toLocaleString('th-TH',{minimumFractionDigits:2})}</div>
+        </div>
+        <div style="border:1px solid #1a7a4a;padding:10px;border-radius:6px;background:#f2fbf6">
+          <div style="font-size:11px;color:#666">จ่ายแล้ว</div>
+          <div style="font-size:18px;font-weight:800;color:#1a7a4a">฿${totalPaid.toLocaleString('th-TH',{minimumFractionDigits:2})}</div>
+        </div>
+      </div>
+      <div style="margin-top:30px;border-top:1px dashed #ccc;padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:12px">
+        <div>
+          <div style="color:#666;margin-bottom:20px">ผู้รับรอง</div>
+          <div>__________________________</div>
+          <div style="margin-top:4px;color:#666">ลงชื่อ / วันที่</div>
+        </div>
+        <div>
+          <div style="color:#666;margin-bottom:20px">ผู้จัดทำ</div>
+          <div>__________________________</div>
+          <div style="margin-top:4px;color:#666">ลงชื่อ / วันที่</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// Init
+renderList();
+// Set print default dates
+const now = new Date();
+const y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0');
+if (document.getElementById('p-from')) {
+  document.getElementById('p-from').value = `${y}-${m}-01`;
+  document.getElementById('p-to').value = now.toISOString().slice(0,10);
+}
+</script>
+</body>
+</html>
